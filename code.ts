@@ -18,7 +18,6 @@ brick.buttonDown.onEvent(ButtonEvent.Pressed, function () {
     target_gyro = sensors.gyro4.angle()
     motors.largeAD.steer(moving_speed, moving_speed, .5, MoveUnit.Rotations)
 })
-
 brick.buttonUp.onEvent(ButtonEvent.Pressed, function () {
     //automatic_mode = true
     //target_gyro += 90
@@ -64,6 +63,12 @@ function Mission10PipeReplacement() {
 
     moving_back = false
     brick.showString("S: M10_3_GO_FORWARD", 1)
+    motors.largeAD.steer(20, 20, 1.5, MoveUnit.Rotations)
+    motors.largeAD.pauseUntilReady()
+    motors.mediumB.run(20, 3.5, MoveUnit.Rotations)
+    motors.mediumB.pauseUntilReady()
+    motors.largeAD.steer(20, 20, 0.75, MoveUnit.Rotations)
+    motors.largeAD.pauseUntilReady()
     loops.pause(5000)
 
     moving = false
@@ -73,24 +78,32 @@ function Mission10PipeReplacement() {
 }
 
 pauseUntil(() => brick.buttonEnter.isPressed())
+
+// move back to hit the wall to calibrate the gyro sensor and position
 automatic_mode = true
-// start first run
 target_gyro = sensors.gyro4.angle()
 moving_back = true;
-brick.showString("stage:   1", 1)
+brick.showString("S: INIT_MVBACK", 1)
 
 //pauseUntil(BothTouchSensorsPressed)
 target_gyro = sensors.gyro4.angle()
 moving_back = false
-brick.showString("stage:   2", 1)
-
+brick.showString("S: GYRO RESETED. RUN 1", 1)
+// the approximate time it takes to the first mission (M10)
+// use the pause to avoid mistaking dark/bright spots of the map as M10 starting line
+pause(2000)
 let last_bright_detected_time = 0
+let dark_detected_after_bright = false
 sensors.color3.onLightDetected(LightIntensityMode.Reflected, Light.Bright, function () {
-    last_bright_detected_time = control.timer1.seconds()
-    brick.showString("stage:   3", 1)
+    if (dark_detected_after_bright)
+        Mission10PipeReplacement()
+    else {
+        last_bright_detected_time = control.timer1.seconds()
+        dark_detected_after_bright = false
+    }
 })
 sensors.color3.onLightDetected(LightIntensityMode.Reflected, Light.Dark, function () {
     if (control.timer1.seconds() - last_bright_detected_time > 1) return
-    Mission10PipeReplacement()
+    dark_detected_after_bright = true
 })
 
