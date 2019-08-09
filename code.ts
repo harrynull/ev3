@@ -1,3 +1,4 @@
+// Initialization
 let rotating_speed = 10
 let moving_speed = 20 //80
 let ADJUST_CONSTANT = 3
@@ -63,20 +64,35 @@ function Mission10PipeReplacement() {
 
     moving_back = false
     brick.showString("S: M10_3_GO_FORWARD", 1)
+    automatic_mode = false
+    // Go forward
     motors.largeAD.steer(20, 20, 1.5, MoveUnit.Rotations)
     motors.largeAD.pauseUntilReady()
+    // Grab the broken pipe
     motors.mediumB.run(20, 3.5, MoveUnit.Rotations)
     motors.mediumB.pauseUntilReady()
+    // Go forward
     motors.largeAD.steer(20, 20, 0.75, MoveUnit.Rotations)
     motors.largeAD.pauseUntilReady()
-    loops.pause(5000)
+    // Put down the new pipe
+    motors.mediumB.run(-20, 3.5, MoveUnit.Rotations)
+    motors.mediumB.pauseUntilReady()
 
-    moving = false
+    loops.pause(5000)
     brick.showString("S: M10_4_FINISHED", 1)
+
+    automatic_mode = true
+    moving_back = true
+    loops.pause(1000)
+    moving_back = false
+    target_gyro -= 90 // turn right
+
+    brick.showString("S: M10_5_RESETED", 1)
     //1.8 rot/ A 3 rot /0.8 rot
     //1.5 rot / A 3.5 rot / 0.75 rot 
 }
 
+// Press enter to start the procedure
 pauseUntil(() => brick.buttonEnter.isPressed())
 
 // move back to hit the wall to calibrate the gyro sensor and position
@@ -92,18 +108,23 @@ brick.showString("S: GYRO RESETED. RUN 1", 1)
 // the approximate time it takes to the first mission (M10)
 // use the pause to avoid mistaking dark/bright spots of the map as M10 starting line
 pause(2000)
-let last_bright_detected_time = 0
-let dark_detected_after_bright = false
-sensors.color3.onLightDetected(LightIntensityMode.Reflected, Light.Bright, function () {
-    if (dark_detected_after_bright)
-        Mission10PipeReplacement()
-    else {
-        last_bright_detected_time = control.timer1.seconds()
-        dark_detected_after_bright = false
-    }
-})
-sensors.color3.onLightDetected(LightIntensityMode.Reflected, Light.Dark, function () {
-    if (control.timer1.seconds() - last_bright_detected_time > 1) return
-    dark_detected_after_bright = true
-})
-
+function pause_until_BDB_detected(){
+    let last_bright_detected_time = 0
+    let dark_detected_after_bright = false
+    let canExit = false
+    sensors.color3.onLightDetected(LightIntensityMode.Reflected, Light.Bright, function () {
+        if (dark_detected_after_bright && control.timer1.seconds() - last_bright_detected_time < 1)
+            canExit = true
+        else {
+            last_bright_detected_time = control.timer1.seconds()
+            dark_detected_after_bright = false
+        }
+    })
+    sensors.color3.onLightDetected(LightIntensityMode.Reflected, Light.Dark, function () {
+        if (control.timer1.seconds() - last_bright_detected_time < 1)
+            dark_detected_after_bright = true
+    })
+    pauseUntil(() => canExit)
+}
+pause_until_BDB_detected()
+Mission10PipeReplacement()
