@@ -1,5 +1,5 @@
 // Initialization
-let rotating_speed = 10
+let rotating_speed = 40
 let moving_speed = 20 //80
 let ADJUST_CONSTANT = 3
 let moving_back = false
@@ -24,27 +24,7 @@ brick.buttonUp.onEvent(ButtonEvent.Pressed, function () {
     //target_gyro += 90
     //Mission10PipeReplacement()
 
-    automatic_mode = true
-    moving = true
-    moving_speed = 50
-    pause(2000)
-    moving_back = true
-
-    pause(1500)
-    moving_back = false
-
-    automatic_mode = false
-
-    motors.largeAD.steer(50, 30, 100, MoveUnit.Degrees)
-    motors.largeAD.pauseUntilReady()
-    motors.largeAD.steer(9, 21, 200, MoveUnit.Degrees)
-    motors.largeAD.pauseUntilReady()
-
-    motors.mediumB.run(50, 1200, MoveUnit.Degrees) // lower
-    motors.mediumB.pauseUntilReady()
-
-    automatic_mode = true
-    moving_back = true
+    motors.largeAD.steer(-100, 30)
 
     // Go back
     //motors.largeAD.steer(9, 21, -200, MoveUnit.Degrees)
@@ -68,7 +48,8 @@ forever(function () {
         return;
     }
     if (moving || gyro_diff != 0) {
-        motors.largeAD.steer(-gyro_diff, (moving_back ? -1 : 1) * (moving ? moving_speed : rotating_speed))
+        motors.largeAD.steer((moving_back ? -1 : 1) * (-gyro_diff),
+            (moving_back ? -1 : 1) * (moving ? moving_speed : rotating_speed))
     } else {
         motors.largeAD.stop()
     }
@@ -77,13 +58,19 @@ forever(function () {
 
 
 function Mission10PipeReplacement() {
-    moving = false
-    target_gyro += 90 // turn left
+    // go back a little to get back to the line
+    moving_back = true
+    pause(700)
+    moving_back = false
+
+    moving = false // avoid moving while it is turning
+    target_gyro += 90 // turn left to face the pipe
     gyro_diff = ((sensors.gyro4.angle() - target_gyro) % 360) * ADJUST_CONSTANT
     brick.showString("S: M10_1_AWAIT_TURNING", 1)
     pauseUntil(() => Math.abs(gyro_diff) < 5)
 
     moving = true
+    pause(1000)
     moving_back = true
     brick.showString("S: M10_2_BACK_WALL", 1)
     pauseUntil(BothTouchSensorsPressed)
@@ -91,11 +78,31 @@ function Mission10PipeReplacement() {
 
     moving_back = false
     brick.showString("S: M10_3_GO_FORWARD", 1)
+
+    moving = true
+    moving_speed = 50
+    pause(1550)
+
+    automatic_mode = false
+    motors.largeAD.steer(50, 30, 150, MoveUnit.Degrees)
+    motors.largeAD.pauseUntilReady()
+
+    /*pause(2000)
+    moving_back = true
+
+    pause(1500)
+    moving_back = false
+
     automatic_mode = false
 
-    //////////////////LIFTINGCODE/////////
+    motors.largeAD.steer(50, 30, 100, MoveUnit.Degrees)
+    motors.largeAD.pauseUntilReady()
+    motors.largeAD.steer(9, 21, 200, MoveUnit.Degrees)
+    motors.largeAD.pauseUntilReady()
+    */
+    motors.mediumB.run(50, 1200, MoveUnit.Degrees) // lower
+    motors.mediumB.pauseUntilReady()
 
-    loops.pause(5000)
     brick.showString("S: M10_4_FINISHED", 1)
 
     automatic_mode = true
@@ -105,8 +112,6 @@ function Mission10PipeReplacement() {
     target_gyro -= 90 // turn right
 
     brick.showString("S: M10_5_RESETED", 1)
-    //1.8 rot/ A 3 rot /0.8 rot
-    //1.5 rot / A 3.5 rot / 0.75 rot 
 }
 
 function MissionM06ToiletLever() {
@@ -146,20 +151,19 @@ moving_back = false
 brick.showString("S: GYRO RESETED. RUN 1", 1)
 // the approximate time it takes to the first mission (M10)
 // use the pause to avoid mistaking dark/bright spots of the map as M10 starting line
-pause(2000)
+//pause(2000)
 let last_bright_detected_time = 0
-let dark_detected_after_bright = false
-sensors.color3.onLightDetected(LightIntensityMode.Reflected, Light.Bright, function () {
-    if (dark_detected_after_bright && control.timer1.seconds() - last_bright_detected_time < 2) {
+sensors.color3.pauseUntilLightDetected(LightIntensityMode.Reflected, Light.Bright)
+sensors.color3.pauseUntilLightDetected(LightIntensityMode.Reflected, Light.Dark)
+Mission10PipeReplacement()
+MissionM06ToiletLever()
+/*
+//sensors.color3.onLightDetected(LightIntensityMode.Reflected, Light.Bright, function () {
+//    last_bright_detected_time = control.timer1.seconds()
+//})
+sensors.color3.onLightDetected(LightIntensityMode.Reflected, Light.Dark, function () {
+    if (control.timer1.seconds() - last_bright_detected_time < 1) {
         Mission10PipeReplacement()
         MissionM06ToiletLever()
     }
-    else {
-        last_bright_detected_time = control.timer1.seconds()
-        dark_detected_after_bright = false
-    }
-})
-sensors.color3.onLightDetected(LightIntensityMode.Reflected, Light.Dark, function () {
-    if (control.timer1.seconds() - last_bright_detected_time < 1)
-        dark_detected_after_bright = true
-})
+})*/
