@@ -9,10 +9,10 @@ let target_gyro = 0
 let gyro_diff = 0
 let BothTouchSensorsPressed = () => sensors.touch1.isPressed() && sensors.touch2.isPressed();
 brick.buttonLeft.onEvent(ButtonEvent.Pressed, function () {
-    motors.mediumB.run(10, .5, MoveUnit.Rotations)
+    motors.mediumB.run(50, 1, MoveUnit.Rotations)
 })
 brick.buttonRight.onEvent(ButtonEvent.Pressed, function () {
-    motors.mediumB.run(-10, .5, MoveUnit.Rotations)
+    motors.mediumB.run(-50, 1, MoveUnit.Rotations)
 })
 brick.buttonDown.onEvent(ButtonEvent.Pressed, function () {
     automatic_mode = false
@@ -23,26 +23,32 @@ brick.buttonUp.onEvent(ButtonEvent.Pressed, function () {
     //automatic_mode = true
     //target_gyro += 90
     //Mission10PipeReplacement()
+
+    automatic_mode = true
+    moving = true
+    moving_speed = 50
+    pause(2000)
+    moving_back = true
+
+    pause(1500)
+    moving_back = false
+
     automatic_mode = false
-    // Go forward
-    motors.largeAD.steer(9, 21, 550, MoveUnit.Degrees)
+
+    motors.largeAD.steer(50, 30, 100, MoveUnit.Degrees)
     motors.largeAD.pauseUntilReady()
-    // Grab the broken pipe
-    motors.mediumB.run(50, 20, MoveUnit.Degrees) // lowering
-    motors.mediumB.pauseUntilReady()
-    motors.largeAD.steer(9, 21, 50, MoveUnit.Degrees)
+    motors.largeAD.steer(9, 21, 200, MoveUnit.Degrees)
     motors.largeAD.pauseUntilReady()
-    motors.mediumB.run(-50, 1200, MoveUnit.Degrees) // lifting
+
+    motors.mediumB.run(50, 1200, MoveUnit.Degrees) // lower
     motors.mediumB.pauseUntilReady()
-    // Go forward
-    motors.largeAD.steer(9, 21, 250, MoveUnit.Degrees)
-    motors.largeAD.pauseUntilReady()
-    // Put down the new pipe
-    motors.mediumB.run(50, 1270, MoveUnit.Degrees) // lowering
-    motors.mediumB.pauseUntilReady()
-    // Grab the broken pipe
-    motors.mediumB.run(-50, 1200, MoveUnit.Degrees) // lifting
-    motors.mediumB.pauseUntilReady()
+
+    automatic_mode = true
+    moving_back = true
+
+    // Go back
+    //motors.largeAD.steer(9, 21, -200, MoveUnit.Degrees)
+    //motors.largeAD.pauseUntilReady()
 })
 
 forever(function () {
