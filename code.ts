@@ -21,14 +21,17 @@ function pauseUntilTurned() {
     moving = true
 }
 brick.buttonLeft.onEvent(ButtonEvent.Pressed, function () {
-    motors.mediumB.run(50, 360, MoveUnit.Degrees)
+    motors.mediumB.run(50, 370, MoveUnit.Degrees)
 })
 brick.buttonRight.onEvent(ButtonEvent.Pressed, function () {
-    motors.mediumB.run(50, 360, MoveUnit.Degrees)
+    motors.mediumB.run(-50, 370, MoveUnit.Degrees)
 })
 brick.buttonDown.onEvent(ButtonEvent.Pressed, function () {
-    automatic_mode = false
+    automatic_mode = true
     target_gyro = sensors.gyro4.angle()
+
+    Mission09Tripod()
+    Mission18Faucet()
 })
 
 brick.buttonUp.onEvent(ButtonEvent.Pressed, function () {
@@ -39,12 +42,44 @@ brick.buttonUp.onEvent(ButtonEvent.Pressed, function () {
     pause(2000)
     target_gyro += 90 // left
     pauseUntilTurned()
+    pause(1000)
     moving_back = true
-    pause(3000)
-    target_gyro -= 20
-    pause(5000)
+    pause(1000)
+    moving_back = false
     target_gyro += 30
+    pauseUntilTurned()
+    pause(1500)
+    target_gyro -= 30
+    pauseUntilTurned()
+    // go hit the pump
+    pause(2200)
+    // go back for .5s
+    moving_back = true
+    pause(500)
+    moving_back = false
+    // turn right for rain
+    target_gyro -= 90
+    pauseUntilTurned()
+    moving_back = true
+    pause(100)
+    moving_back = false
+    moving = false
+    motors.mediumB.run(50, 370, MoveUnit.Degrees) // lower the arm
+    motors.mediumB.pauseUntilReady()
+    target_gyro += 20
+    pauseUntilTurned()
+    pause(180)
+    moving = false
+    target_gyro -= 25
+    pauseUntilTurned()
+    // go back for the pump
+    moving_back = true
     pause(2000)
+    moving_back = false
+    // turn right to go back
+    target_gyro -= 95
+    pauseUntilTurned()
+    pause(3500)
     moving = false
 })
 
@@ -64,6 +99,9 @@ brick.buttonUp.onEvent(ButtonEvent.Pressed, function () {
  * Set `moving` to false if you need to turn a large angle. This will enable
  * turning mode. Use the function `pauseUntilTurned` to pause until the robot
  * is fully turned.
+ * 
+ * Ideally should have used a class for better encapsulation.
+ * But apparently blocks don't support it.
  */
 forever(function () {
     // update gyro_diff
@@ -102,6 +140,34 @@ forever(function () {
     }
     //motors.largeAD.steer((sensors.color3.reflectedLight() - 50)/10, 20)
 })
+function Mission09Tripod() {
+    moving_speed = 50
+    moving = true
+    pause(5500)
+    moving = false
+    sensors.color3.pauseUntilLightDetected(LightIntensityMode.Reflected, Light.Bright)
+    sensors.color3.pauseUntilLightDetected(LightIntensityMode.Reflected, Light.Dark)
+    target_gyro -= 30
+    pauseUntilTurned()
+    moving_speed = 30
+    pause(5000)
+    moving = false
+    moving_speed = 20
+}
+
+function Mission18Faucet() {
+    moving_back = true
+    pause(500)
+    moving_back = false
+    target_gyro += 40
+    pauseUntilTurned
+    moving = true
+    pause(3500)
+    moving_speed += 10
+    pause(500)
+    moving = false
+    moving_speed = 20
+}
 
 function Mission10PipeReplacement() {
     // Go back a little to get back to the line
@@ -110,16 +176,16 @@ function Mission10PipeReplacement() {
     moving_back = false
 
     // Turn left to face the pipe
-    target_gyro += 90 
+    target_gyro += 90
     pauseUntilTurned()
 
     // The robot should be facing towards the pipe now
     // Move forward for 1s to hook the pipe
     moving = true
-    pause(1000)  
+    pause(1000)
 
     // Move backward until it hits the wall
-    moving_back = true 
+    moving_back = true
     pauseUntil(BothTouchSensorsPressed)
     moving_back = false
     //target_gyro = sensors.gyro4.angle()
@@ -153,10 +219,9 @@ function MissionM06ToiletLever() {
     pause(2000)
 
     brick.showString("S: M06_2_TURNING", 1)
-    moving = false
     target_gyro += 90 // turn left
-    gyro_diff = (sensors.gyro4.angle() - target_gyro) % 360
-    pauseUntil(() => Math.abs(gyro_diff) < 5)
+    pauseUntilTurned()
+    moving = false
 
     brick.showString("S: M06_3_PRESS", 1)
     motors.mediumB.run(50, 1270, MoveUnit.Degrees) // lowering
@@ -169,14 +234,29 @@ function MissionM06ToiletLever() {
     moving = true
 }
 
+function Mission2Fountain() {
+    moving_speed=30
+    moving = true
+
+    
+    pause(3750) //move straight to the mission point
+    target_gyro -= 90 //turn left 90 degree
+    pauseUntilTurned()
+    moving_back = true //move backward for 0.68s
+    pause(680)
+    moving_back = false //stop moving back
+}
+
 // Press enter to start the procedure
 brick.buttonEnter.pauseUntil(ButtonEvent.Pressed)
 automatic_mode = true
 target_gyro = sensors.gyro4.angle()
+Mission2Fountain()
+moving_speed = 50
 brick.showString("S: RUN 1", 1)
 // the approximate time it takes to the first mission (M10)
 // use the pause to avoid mistaking dark/bright spots of the map as M10 starting line
-//pause(2000)
+pause(2000)
 sensors.color3.pauseUntilLightDetected(LightIntensityMode.Reflected, Light.Bright)
 sensors.color3.pauseUntilLightDetected(LightIntensityMode.Reflected, Light.Dark)
 Mission10PipeReplacement()
