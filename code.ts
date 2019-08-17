@@ -20,13 +20,18 @@ function pauseUntilTurned() {
     pauseUntil(() => Math.abs(gyro_diff) < 1)
     moving = true
 }
-brick.buttonLeft.onEvent(ButtonEvent.Pressed, function () {
+
+// Lower the arm when button left is pressed
+brick.buttonLeft.onEvent(ButtonEvent.Bumped, function () {
     motors.mediumB.run(50, 370, MoveUnit.Degrees)
 })
-brick.buttonRight.onEvent(ButtonEvent.Pressed, function () {
+// Lift the arm when button right is pressed
+brick.buttonRight.onEvent(ButtonEvent.Bumped, function () {
     motors.mediumB.run(-50, 370, MoveUnit.Degrees)
 })
-brick.buttonDown.onEvent(ButtonEvent.Pressed, function () {
+
+// Start Run 3 when button down is pressed
+brick.buttonDown.onEvent(ButtonEvent.Bumped, function () {
     automatic_mode = true
     target_gyro = sensors.gyro4.angle()
 
@@ -34,49 +39,73 @@ brick.buttonDown.onEvent(ButtonEvent.Pressed, function () {
     Mission18Faucet()
 })
 
-brick.buttonUp.onEvent(ButtonEvent.Pressed, function () {
+// Start Run 2 when button up is pressed
+brick.buttonUp.onEvent(ButtonEvent.Bumped, function () {
     automatic_mode = true
     moving = true
     target_gyro = sensors.gyro4.angle()
     moving_speed = 50
-    pause(2000)
-    target_gyro += 90 // left
+
+    // move forward
+    pause(2100)
+    // turn left for Mission Filter
+    target_gyro += 90
     pauseUntilTurned()
+    // move forward to close the latch
     pause(1000)
+    // move back for 1s
     moving_back = true
     pause(1000)
     moving_back = false
+    // turn left 30 deg and go forward
     target_gyro += 30
     pauseUntilTurned()
     pause(1500)
+    // turn right 30 deg, should be facing the pump
     target_gyro -= 30
     pauseUntilTurned()
     // go hit the pump
     pause(2200)
-    // go back for .5s
+    // go back
     moving_back = true
     pause(500)
     moving_back = false
     // turn right for rain
     target_gyro -= 90
     pauseUntilTurned()
-    moving_back = true
-    pause(100)
-    moving_back = false
     moving = false
-    motors.mediumB.run(50, 370, MoveUnit.Degrees) // lower the arm
+    motors.largeAD.stop()
+    motors.mediumB.run(50, 370 * 3, MoveUnit.Degrees) // lower the arm
     motors.mediumB.pauseUntilReady()
-    target_gyro += 20
-    pauseUntilTurned()
-    pause(180)
-    moving = false
-    target_gyro -= 25
-    pauseUntilTurned()
-    // go back for the pump
+    pause(1500)
+    //move back to hit the wall
+    moving = true
     moving_back = true
-    pause(2000)
+    pauseUntil(BothTouchSensorsPressed)
     moving_back = false
-    // turn right to go back
+    // move under the rain
+    moving_speed = 20
+    pause(2000)
+    moving = false
+
+    motors.mediumB.run(-50, 390, MoveUnit.Degrees) // lift the arm
+    motors.mediumB.pauseUntilReady()
+    automatic_mode = false
+    motors.largeA.run(50, 80, MoveUnit.Degrees)
+    pause(1500)
+    motors.largeA.run(-50, 80, MoveUnit.Degrees)
+    pause(1500)
+    motors.largeAD.steer(0, -50, 500, MoveUnit.Degrees)
+    // go back for the pump
+    automatic_mode = true
+    moving_speed = 50
+    // turn right
+    target_gyro = -30
+    pauseUntilTurned()
+    moving_back = true
+    pause(3000)
+    moving_back = false
+    // turn right to go back to base
     target_gyro -= 95
     pauseUntilTurned()
     pause(3500)
@@ -143,24 +172,27 @@ forever(function () {
 function Mission09Tripod() {
     moving_speed = 50
     moving = true
-    pause(5500)
-    moving = false
+    pause(3500)
+    //moving = false
+
     sensors.color3.pauseUntilLightDetected(LightIntensityMode.Reflected, Light.Bright)
     sensors.color3.pauseUntilLightDetected(LightIntensityMode.Reflected, Light.Dark)
-    target_gyro -= 30
+
+    target_gyro -= 185
     pauseUntilTurned()
-    moving_speed = 30
-    pause(5000)
+    moving_speed = 50
+    pause(6000)
     moving = false
-    moving_speed = 20
+    //moving_speed = 20
 }
 
 function Mission18Faucet() {
     moving_back = true
     pause(500)
     moving_back = false
+
     target_gyro += 40
-    pauseUntilTurned
+    pauseUntilTurned()
     moving = true
     pause(3500)
     moving_speed += 10
@@ -169,76 +201,10 @@ function Mission18Faucet() {
     moving_speed = 20
 }
 
-function Mission10PipeReplacement() {
-    // Go back a little to get back to the line
-    moving_back = true
-    pause(700)
-    moving_back = false
-
-    // Turn left to face the pipe
-    target_gyro += 90
-    pauseUntilTurned()
-
-    // The robot should be facing towards the pipe now
-    // Move forward for 1s to hook the pipe
-    moving = true
-    pause(1000)
-
-    // Move backward until it hits the wall
-    moving_back = true
-    pauseUntil(BothTouchSensorsPressed)
-    moving_back = false
-    //target_gyro = sensors.gyro4.angle()
-
-    // Move forward for putting the new pipe
-    // Hopefully the robot will be in position.
-    moving_speed = 50
-    pause(1550)
-
-    // Disengage the automatic mode. Put down the new pipe.
-    automatic_mode = false
-    motors.largeAD.steer(50, 30, 150, MoveUnit.Degrees)
-    motors.largeAD.pauseUntilReady()
-    motors.mediumB.run(50, 1200, MoveUnit.Degrees) // lower
-    motors.mediumB.pauseUntilReady()
-
-    // Engage the automatic mode and move back.
-    automatic_mode = true
-    moving_back = true
-    loops.pause(1000)
-    moving_back = false
-
-    // Turn right and move forward for the next mission.
-    target_gyro -= 90
-    pauseUntilTurned()
-}
-
-function MissionM06ToiletLever() {
-    brick.showString("S: M06_1_START", 1)
-    moving_back = false
-    pause(2000)
-
-    brick.showString("S: M06_2_TURNING", 1)
-    target_gyro += 90 // turn left
-    pauseUntilTurned()
-    moving = false
-
-    brick.showString("S: M06_3_PRESS", 1)
-    motors.mediumB.run(50, 1270, MoveUnit.Degrees) // lowering
-    motors.mediumB.pauseUntilReady()
-    motors.mediumB.run(-50, 1270, MoveUnit.Degrees) // lifting
-    motors.mediumB.pauseUntilReady()
-
-    brick.showString("S: M06_4_TURNING", 1)
-    target_gyro -= 90 // right left
-    moving = true
-}
-
 function Mission2Fountain() {
-    moving_speed=30
+    moving_speed = 30
     moving = true
 
-    
     pause(3750) //move straight to the mission point
     target_gyro -= 90 //turn left 90 degree
     pauseUntilTurned()
@@ -247,19 +213,3 @@ function Mission2Fountain() {
     moving_back = false //stop moving back
 }
 
-// Press enter to start the procedure
-brick.buttonEnter.pauseUntil(ButtonEvent.Pressed)
-automatic_mode = true
-target_gyro = sensors.gyro4.angle()
-Mission2Fountain()
-moving_speed = 50
-brick.showString("S: RUN 1", 1)
-// the approximate time it takes to the first mission (M10)
-// use the pause to avoid mistaking dark/bright spots of the map as M10 starting line
-pause(2000)
-sensors.color3.pauseUntilLightDetected(LightIntensityMode.Reflected, Light.Bright)
-sensors.color3.pauseUntilLightDetected(LightIntensityMode.Reflected, Light.Dark)
-Mission10PipeReplacement()
-sensors.color3.pauseUntilLightDetected(LightIntensityMode.Reflected, Light.Bright)
-sensors.color3.pauseUntilLightDetected(LightIntensityMode.Reflected, Light.Dark)
-MissionM06ToiletLever()
