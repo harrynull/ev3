@@ -7,9 +7,6 @@ let automatic_mode = false // if true, the robot will move according to the abov
 let gyro_diff = 0 // the difference between current gyro reading and the target gyro
 let BothTouchSensorsPressed = () => sensors.touch1.isPressed() && sensors.touch2.isPressed();
 
-sensors.color3.setThreshold(Light.Bright, 40)
-sensors.color3.setThreshold(Light.Dark, 10)
-
 // Pause the program until the gyro sensor confirms that the robot
 // has turned completely (within 1 deg)
 // Optional parameter: ang: the angle in which it is turned. + means left
@@ -22,7 +19,7 @@ function turnAndWait(ang?: number) {
     // because you don't know if the assignment in the forever function
     // will be executed before the "pauseUntil" here 
     gyro_diff = (sensors.gyro4.angle() - target_gyro) % 360
-    pauseUntil(() => Math.abs(gyro_diff) < 1)
+    pauseUntil(() => Math.abs(gyro_diff) < 1, 8000)
     moving = true
 }
 
@@ -48,20 +45,7 @@ brick.buttonDown.onEvent(ButtonEvent.Bumped, function () {
     target_gyro = sensors.gyro4.angle()
 
     Mission09Tripod()
-    Mission18Faucet()
-})
-
-brick.buttonEnter.onEvent(ButtonEvent.Bumped, function () {
-    automatic_mode = true
-    target_gyro = sensors.gyro4.angle()
-    moving_speed = 20
-    music.playTone(659, 106);
-    moving = true
-    pauseUntil(() => sensors.color3.reflectedLight() > 60) // detect white
-    music.playTone(659, 100);
-    pauseUntil(() => sensors.color3.reflectedLight() < 10) // detect black
-    moveBack(2000)
-    moving = false
+    //Mission18Faucet()
 })
 
 // Start Run 2 when button up is pressed
@@ -136,7 +120,7 @@ function Run2() {
     moving_speed = 50
 
     // move forward
-    pause(2100)
+    pause(2200)
     // turn left for Mission Filter
     turnAndWait(90)
     // move forward to close the latch
@@ -151,68 +135,91 @@ function Run2() {
     // go hit the pump
     pause(2200)
     // go back
-    moveBack(500)
+    moveBack(400)
     // turn right for rain
-    turnAndWait(-90)
+    turnAndWait(-70)
     moving = false
     motors.mediumB.run(50, 370 * 3, MoveUnit.Degrees) // lower the arm
     motors.mediumB.pauseUntilReady()
-    /*
-    //move back to hit the wall
-    moving = true
-    moving_back = true
-    pauseUntil(BothTouchSensorsPressed)
-    moving_back = false
     // move under the rain
-    moving_speed = 20
-    pause(2000)*/
     moving_speed = 20
     music.playTone(659, 106);
     moving = true
     pauseUntil(() => sensors.color3.reflectedLight() > 60) // detect white
     music.playTone(659, 100);
     pauseUntil(() => sensors.color3.reflectedLight() < 10) // detect black
-    moveBack(2000)
+    moveBack(1800)
     moving = false
     music.playTone(659, 229);
-    moving_speed = 50
 
-    motors.mediumB.run(-50, 390, MoveUnit.Degrees) // lift the arm
+    motors.mediumB.run(-50, 410, MoveUnit.Degrees) // lift the arm
     motors.mediumB.pauseUntilReady()
     automatic_mode = false
-    motors.largeA.run(50, 80, MoveUnit.Degrees)
+    motors.largeA.run(50, 100, MoveUnit.Degrees)
     pause(1500)
-    motors.largeA.run(-50, 80, MoveUnit.Degrees)
+    motors.largeA.run(-50, 150, MoveUnit.Degrees)
     pause(1500)
-    motors.largeAD.steer(0, -50, 500, MoveUnit.Degrees)
+    //motors.largeAD.steer(0, -50, 180, MoveUnit.Degrees)
+
+    // lower the arm and go forward
+    motors.mediumB.run(50, 410, MoveUnit.Degrees) // lower the arm
+    motors.largeAD.steer(0, 50, 120, MoveUnit.Degrees)
+
+    music.playTone(659, 229);
     // go back for the pump
-    automatic_mode = true
-    moving_speed = 50
     // turn right
-    target_gyro = -30
-    turnAndWait()
-    moveBack(3000)
+    motors.largeA.run(-50, 70, MoveUnit.Degrees)
+    motors.largeD.run(50, 70, MoveUnit.Degrees)
+    //target_gyro = -10
+    //turnAndWait()
+    music.playTone(559, 229);
+    //moveBack(10000)
+    motors.largeAD.steer(0, -50, 8000, MoveUnit.MilliSeconds)
+    music.playTone(559, 229);
+
     // turn right to go back to base
-    turnAndWait(-95)
-    pause(3500)
+    target_gyro = sensors.gyro4.angle()
+    automatic_mode = true
+    moving = true
+    pause(1000)
+    target_gyro = -130
+    turnAndWait()
+    // speed up and return to the base
+    moving_speed = 50
+    pause(4000)
     moving = false
 }
 
 function Mission09Tripod() {
     moving_speed = 50
     moving = true
-    pause(3500)
-    //moving = false
+    // move forward for 4.9s
+    pause(4900)
 
-    sensors.color3.pauseUntilLightDetected(LightIntensityMode.Reflected, Light.Bright)
-    sensors.color3.pauseUntilLightDetected(LightIntensityMode.Reflected, Light.Dark)
+    music.playTone(659, 50);
+    pauseUntil(() => sensors.color3.reflectedLight() > 60) // detect white
+
+    music.playTone(659, 50);
+    pauseUntil(() => sensors.color3.reflectedLight() < 10) // detect black
+
+    music.playTone(659, 50);
+    // keep going for .5s after detecting the line
     pause(500)
 
-    turnAndWait(-185)
+    // turn left 30 deg
+    turnAndWait(30)
+    // move forward, slowing down
+    moving_speed = 20
+    pause(800)
+    // speed up, starting to turn
     moving_speed = 50
+    moveBack(1500)
+    target_gyro = -200
+    turnAndWait()
+    // return to the base
+    moving_speed = 80
     pause(6000)
     moving = false
-    //moving_speed = 20
 }
 
 function Mission18Faucet() {
