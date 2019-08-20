@@ -5,7 +5,6 @@ let moving = true
 let target_gyro = 0
 let automatic_mode = false // if true, the robot will move according to the above variables
 let gyro_diff = 0 // the difference between current gyro reading and the target gyro
-let BothTouchSensorsPressed = () => sensors.touch1.isPressed() && sensors.touch2.isPressed();
 
 // Pause the program until the gyro sensor confirms that the robot
 // has turned completely (within 1 deg)
@@ -53,6 +52,36 @@ brick.buttonUp.onEvent(ButtonEvent.Bumped, function () {
     Run2()
 })
 
+brick.buttonEnter.onEvent(ButtonEvent.Bumped, function () {
+    automatic_mode = true
+    target_gyro = sensors.gyro4.angle()
+
+    moving_speed = 50
+    moving = true
+    // move forward for 4.9s
+    pause(4900)
+
+    music.playTone(659, 50);
+    pauseUntil(() => sensors.color3.reflectedLight() > 60) // detect white
+
+    music.playTone(659, 50);
+    pauseUntil(() => sensors.color3.reflectedLight() < 10) // detect black
+
+    music.playTone(659, 50);
+    // keep going for .5s after detecting the line
+    pause(500)
+    // turn left 90 deg
+    turnAndWait(90)
+    // move forward, slowing down
+    moving_speed = 20
+    pause(800)
+    moveBack(-2000)
+
+    moving_speed = 50
+    turnAndWait(90)
+    pause(3000)
+
+})
 /* "automatic mode" - control the movement of the robot
  * It will navigate through the gyro sensor
  * and will move the robot facing "target_gyro"
@@ -139,7 +168,7 @@ function Run2() {
     // turn right for rain
     turnAndWait(-70)
     moving = false
-    motors.mediumB.run(50, 370 * 3, MoveUnit.Degrees) // lower the arm
+    motors.mediumB.run(50, 370 * 3 + 100, MoveUnit.Degrees) // lower the arm
     motors.mediumB.pauseUntilReady()
     // move under the rain
     moving_speed = 20
@@ -152,7 +181,7 @@ function Run2() {
     moving = false
     music.playTone(659, 229);
 
-    motors.mediumB.run(-50, 410, MoveUnit.Degrees) // lift the arm
+    motors.mediumB.run(-50, 410 + 100, MoveUnit.Degrees) // lift the arm
     motors.mediumB.pauseUntilReady()
     automatic_mode = false
     motors.largeA.run(50, 100, MoveUnit.Degrees)
@@ -174,7 +203,7 @@ function Run2() {
     //turnAndWait()
     music.playTone(559, 229);
     //moveBack(10000)
-    motors.largeAD.steer(0, -50, 8000, MoveUnit.MilliSeconds)
+    motors.largeAD.steer(0, -50, 1500, MoveUnit.MilliSeconds)
     music.playTone(559, 229);
 
     // turn right to go back to base
@@ -219,19 +248,7 @@ function Mission09Tripod() {
     // return to the base
     moving_speed = 80
     pause(6000)
+    target_gyro = -90
+    pause(2000)
     moving = false
 }
-
-function Mission18Faucet() {
-    moveBack(500)
-
-    target_gyro += 40
-    turnAndWait()
-    moving = true
-    pause(3500)
-    moving_speed += 10
-    pause(500)
-    moving = false
-    moving_speed = 20
-}
-
