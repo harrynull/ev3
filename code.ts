@@ -18,6 +18,7 @@ function turnAndWait(ang?: number) {
     // because you don't know if the assignment in the forever function
     // will be executed before the "pauseUntil" here 
     gyro_diff = (sensors.gyro4.angle() - target_gyro) % 360
+    // will timeout after 8s in case it gets stuck somehow
     pauseUntil(() => Math.abs(gyro_diff) < 1, 8000)
     moving = true
 }
@@ -37,14 +38,12 @@ brick.buttonLeft.onEvent(ButtonEvent.Bumped, function () {
 brick.buttonRight.onEvent(ButtonEvent.Bumped, function () {
     motors.mediumB.run(-50, 370, MoveUnit.Degrees)
 })
-
-// Start Run 3 when button down is pressed
+// Start Run 3 (Tripod) when button down is pressed
 brick.buttonDown.onEvent(ButtonEvent.Bumped, function () {
     automatic_mode = true
     target_gyro = sensors.gyro4.angle()
 
     Mission09Tripod()
-    //Mission18Faucet()
 })
 
 // Start Run 2 when button up is pressed
@@ -52,36 +51,6 @@ brick.buttonUp.onEvent(ButtonEvent.Bumped, function () {
     Run2()
 })
 
-brick.buttonEnter.onEvent(ButtonEvent.Bumped, function () {
-    automatic_mode = true
-    target_gyro = sensors.gyro4.angle()
-
-    moving_speed = 50
-    moving = true
-    // move forward for 4.9s
-    pause(4900)
-
-    music.playTone(659, 50);
-    pauseUntil(() => sensors.color3.reflectedLight() > 60) // detect white
-
-    music.playTone(659, 50);
-    pauseUntil(() => sensors.color3.reflectedLight() < 10) // detect black
-
-    music.playTone(659, 50);
-    // keep going for .5s after detecting the line
-    pause(500)
-    // turn left 90 deg
-    turnAndWait(90)
-    // move forward, slowing down
-    moving_speed = 20
-    pause(800)
-    moveBack(-2000)
-
-    moving_speed = 50
-    turnAndWait(90)
-    pause(3000)
-
-})
 /* "automatic mode" - control the movement of the robot
  * It will navigate through the gyro sensor
  * and will move the robot facing "target_gyro"
@@ -138,7 +107,6 @@ forever(function () {
             motors.largeAD.stop()
         }
     }
-    //motors.largeAD.steer((sensors.color3.reflectedLight() - 50)/10, 20)
 })
 
 // For mission 3,4,5: filter, pump, rain
@@ -181,7 +149,7 @@ function Run2() {
     moving = false
     music.playTone(659, 229);
 
-    motors.mediumB.run(-50, 410 + 100, MoveUnit.Degrees) // lift the arm
+    motors.mediumB.run(-50, 410 + 100 + 100, MoveUnit.Degrees) // lift the arm
     motors.mediumB.pauseUntilReady()
     automatic_mode = false
     motors.largeA.run(50, 100, MoveUnit.Degrees)
@@ -191,7 +159,7 @@ function Run2() {
     //motors.largeAD.steer(0, -50, 180, MoveUnit.Degrees)
 
     // lower the arm and go forward
-    motors.mediumB.run(50, 410, MoveUnit.Degrees) // lower the arm
+    motors.mediumB.run(50, 410 + 100, MoveUnit.Degrees) // lower the arm
     motors.largeAD.steer(0, 50, 120, MoveUnit.Degrees)
 
     music.playTone(659, 229);
@@ -248,7 +216,6 @@ function Mission09Tripod() {
     // return to the base
     moving_speed = 80
     pause(6000)
-    target_gyro = -90
-    pause(2000)
-    moving = false
+    automatic_mode = false
+    motors.largeAD.steer(50, -50, 5000, MoveUnit.Degrees)
 }
